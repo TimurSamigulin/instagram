@@ -1,5 +1,8 @@
 import requests
 import logging
+import pathlib
+import os
+from pathlib import Path
 
 class Instagram:
 
@@ -116,6 +119,18 @@ class Instagram:
 
         return edges_media
 
+    def save_in_file(self, data):
+        pass
+
+    def save_image_in_file(self, image_url, path):
+        p = requests.get(image_url)
+        dir_path = path.parent
+        if not dir_path.is_dir():
+            dir_path.mkdir()
+        with open(path, 'wb+') as out:
+            out.write(p.content)
+
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
@@ -124,8 +139,7 @@ if __name__ == '__main__':
 
     insta = Instagram()
     data = insta.get_user_insta_info('stride_up')
-    for key, index in data.items():
-        print(f'{key} - {index}')
+    path = Path('..', 'data', data['insta_tag'], data['insta_tag'] + 'profile_pic.jpg')
 
-    for media in data['edge_media']:
-        print(media)
+    insta.save_image_in_file(data['profile_pic_url'], path)
+    print(data)
