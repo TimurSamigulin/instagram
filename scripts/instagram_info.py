@@ -2,6 +2,7 @@ import requests
 import logging
 import pathlib
 import os
+import pickle
 from pathlib import Path
 
 class Instagram:
@@ -58,6 +59,7 @@ class Instagram:
         for edge in edge_video:
             video_timeline = {}
             media = edge['node']
+            video_timeline['id'] = media['id']
             video_timeline['display_url'] = media['display_url']
             video_timeline['height'] = media['dimensions']['height']
             video_timeline['width'] = media['dimensions']['width']
@@ -78,6 +80,7 @@ class Instagram:
         for edge in edge_timeline:
             timeline = {}
             media = edge['node']
+            timeline['id'] = media['id']
             timeline['display_url'] = media['display_url']
             timeline['height'] = media['dimensions']['height']
             timeline['width'] = media['dimensions']['width']
@@ -90,7 +93,7 @@ class Instagram:
                 timeline['video_view_count'] = None
             timeline['caption'] = media.get('accessibility_caption', None)
 
-            if media.get('edge_media_to_caption', False):
+            if media.get('edge_media_to_caption', False) and len(media['edge_media_to_caption']['edges']) > 0:
                 timeline['text'] = media['edge_media_to_caption']['edges'][0]['node']['text']
             else:
                 timeline['text'] = None
@@ -119,8 +122,12 @@ class Instagram:
 
         return edges_media
 
-    def save_in_file(self, data):
-        pass
+    def save_in_file(self, data, path):
+        dir_path = path.parent
+        if not dir_path.is_dir():
+            dir_path.mkdir()
+        with open(path, 'wb+') as f:
+            pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
     def save_image_in_file(self, image_url, path):
         p = requests.get(image_url)
@@ -131,6 +138,29 @@ class Instagram:
             out.write(p.content)
 
 
+    def save_data(self, data):
+        path = Path('..', 'data', data['insta_tag'], data['insta_tag'] + '.pcl')
+        self.save_in_file(data, path)
+
+        path = Path('..', 'data', data['insta_tag'], 'profile_pic + .jpg')
+        self.save_image_in_file(data['profile_pic_url'], path)
+
+        for media in data['edge_media']:
+            if media['carusel']:
+                for carusel_media in media['carusel']:
+                    path = Path('..', 'data', data['insta_tag'], media["id"], f'{carusel_media["id"]}.jpg')
+                    self.save_image_in_file(carusel_media['display_url'], path)
+            else:
+                path = Path('..', 'data', data['insta_tag'], f'{media["id"]}.jpg')
+                self.save_image_in_file(media['display_url'], path)
+
+        for media in data['edge_video']:
+            path = Path('..', 'data', data['insta_tag'], f'{media["id"]}.jpg')
+            self.save_image_in_file(media['display_url'], path)
+
+
+
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
@@ -138,8 +168,6 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
 
     insta = Instagram()
-    data = insta.get_user_insta_info('stride_up')
-    path = Path('..', 'data', data['insta_tag'], data['insta_tag'] + 'profile_pic.jpg')
-
-    insta.save_image_in_file(data['profile_pic_url'], path)
+    data = insta.get_user_insta_info('ndavidov')
+    insta.save_data(data)
     print(data)
