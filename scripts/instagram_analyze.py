@@ -1,8 +1,11 @@
 import logging
 import numpy as np
 import math
+import os
+
 from PIL import Image
 from collections import Counter
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -13,7 +16,8 @@ import seaborn as sns
 
 class InstaAnalyze:
 
-    def __init__(self):
+    def __init__(self, profile):
+        self.profile = profile
         self.colorfulness_mean = 43.793
         self.colorfulness_std = 8.286
         self.diversity_mean = 2.261
@@ -22,12 +26,39 @@ class InstaAnalyze:
         self.harmony_std = 5.758
 
 
-    def get_metrics(self, profile):
-        pass
-        #todo get all user image and predict metrics
+    def get_metrics(self):
+        image_path = self.__get_all_image()
+        colorfulness_list = []
+        diversity_list = []
+        harmony_list = []
+
+        for image in image_path:
+            pixel_rgb, pixel_hsv = self.__get_image_pixels(image)
+            colorfulness, diversity, harmony = self.__get_image_metrics(pixel_rgb, pixel_hsv)
+            colorfulness_list.append(colorfulness)
+            diversity_list.append(diversity)
+            harmony_list.append(harmony)
+
+        colorfulness_mean = np.mean(colorfulness_list)
+        diversity_mean = np.mean(diversity_list)
+        harmony_mean = np.mean(harmony_list)
+
+        metrics = self.__check_image_metrics(colorfulness_mean, diversity_mean, harmony_mean)
+        return metrics
 
 
-    def _get_image(self, image_path):
+
+
+
+
+
+
+    def __get_all_image(self):
+        result = list(Path('..', 'data', self.profile).rglob("*.[jJ][pP][gG]"))
+        return result
+
+
+    def __get_image_pixels(self, image_path):
         image = Image.open(image_path, "r")
 
         pixel_values = self.__get_image_pixel(image)
@@ -76,8 +107,7 @@ class InstaAnalyze:
     def __rgb2hsv(self, image):
         return image.convert('HSV')
 
-    def __check_image_metrics(self, pixel_rbg, pixel_hsv):
-        colorfulness, diversity, harmony = self.__get_image_metrics(pixel_rbg, pixel_hsv)
+    def __check_image_metrics(self, colorfulness, diversity, harmony):
         metrics = {}
         metrics['colorfulness'] = self.__set_metric(colorfulness, self.colorfulness_mean, self.colorfulness_std)
         metrics['diversity'] = self.__set_metric(diversity, self.diversity_mean, self.diversity_std)
@@ -168,20 +198,8 @@ if __name__ == '__main__':
                         format='%(asctime)s %(name)s %(levelname)s:%(message)s')
     logger = logging.getLogger(__name__)
 
-    analyze = InstaAnalyze()
-    image, image_hsv = analyze._get_image('../data/etosurr/profile_pic + .jpg')
-    # print(f'colorfulness: {analyze._get_colorfulness(image)}')
-    # print(f'Color diversity: {analyze._color_diversity(image)}')
+    analyze = InstaAnalyze('etosurr')
+    print(analyze.get_metrics())
 
-
-
-    # print(max(hue))
-    # ax = sns.histplot(hue, bins=30, kde=True, color='skyblue')
-    # kdeline = ax.lines[0]
-    # xs = kdeline.get_xdata()
-    # ys = kdeline.get_ydata()
-    # print(ys)
-    # # f, ax = plt.subplots(figsize=(7, 7))
-    # # aa = sns.kdeplot(hue, ax=ax)
-    # plt.show()
+    # print(os.listdir(path))
 
