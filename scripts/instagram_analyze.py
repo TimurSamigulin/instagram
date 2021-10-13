@@ -1,17 +1,10 @@
 import logging
 import numpy as np
 import math
-import os
 
 from PIL import Image
 from collections import Counter
 from pathlib import Path
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-
-
 
 
 class InstaAnalyze:
@@ -31,6 +24,7 @@ class InstaAnalyze:
         colorfulness_list = []
         diversity_list = []
         harmony_list = []
+        saturation_list = []
 
         for image in image_path:
             pixel_rgb, pixel_hsv = self.__get_image_pixels(image)
@@ -38,17 +32,29 @@ class InstaAnalyze:
             colorfulness_list.append(colorfulness)
             diversity_list.append(diversity)
             harmony_list.append(harmony)
+            saturation = self.__get_mean_saturation(pixel_hsv)
+            saturation_list.append(saturation)
+
 
         colorfulness_mean = np.mean(colorfulness_list)
         diversity_mean = np.mean(diversity_list)
         harmony_mean = np.mean(harmony_list)
+        saturation_mean = np.mean(saturation_list)
 
         metrics = self.__check_image_metrics(colorfulness_mean, diversity_mean, harmony_mean)
+        metrics['saturation'] = self.__check_saturation(saturation_mean)
         return metrics
 
+    def __check_saturation(self, saturation_mean):
+        if saturation_mean <= 25:
+            return 1
+        else:
+            return 0
 
 
-
+    def __get_mean_saturation(self, pixels_hsv):
+        saturation_mean = np.mean(pixels_hsv[: , :,1].flatten())
+        return saturation_mean
 
 
 
@@ -92,7 +98,7 @@ class InstaAnalyze:
         minc = np.min(rgb[..., :3], axis=-1)
         hsv[..., 2] = maxc
         mask = maxc != minc
-        hsv[mask, 1] = (maxc - minc)[mask] / maxc[mask]
+        hsv[mask, 1] = (1 - minc[mask] / maxc[mask]) * 100
         rc = np.zeros_like(r)
         gc = np.zeros_like(g)
         bc = np.zeros_like(b)
@@ -200,6 +206,3 @@ if __name__ == '__main__':
 
     analyze = InstaAnalyze('etosurr')
     print(analyze.get_metrics())
-
-    # print(os.listdir(path))
-
