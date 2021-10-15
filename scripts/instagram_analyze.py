@@ -204,5 +204,5 @@ if __name__ == '__main__':
                         format='%(asctime)s %(name)s %(levelname)s:%(message)s')
     logger = logging.getLogger(__name__)
 
-    analyze = InstaAnalyze('etosurr')
+    analyze = InstaAnalyze('falcon151')
     print(analyze.get_metrics())

@@ -165,9 +165,8 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
 
     insta = Instagram()
-    data = insta.get_user_insta_info('ndavidov')
+    data = insta.get_user_insta_info('falcon151')
     insta.save_data(data)
-    print(data)
 
 if __name__ == 'instagram_info':
     logging.basicConfig(level=logging.INFO,
