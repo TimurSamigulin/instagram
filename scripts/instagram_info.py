@@ -1,27 +1,36 @@
 import requests
 import logging
-import pathlib
-import os
 import pickle
 from pathlib import Path
 
-class Instagram:
+class Instagram():
 
-    def get_user_insta_info(self, user_tag: str) -> dict:
+    def __init__(self, user_tag: str, path: Path):
+        '''
+
+        :param user_tag: Тэг в инсте
+        :param path: Путь до папки дата
+        '''
         if not user_tag:
             logger.info(f'в user_tag была передана пустая строка')
+        self.user_tag = user_tag
+        self.path = path / self.user_tag
 
-        data = self.__get_profile_info(user_tag)
+
+    def get_user_insta_info(self) -> dict:
+
+
+        data = self.__get_profile_info()
         if not data:
-            logger.info(f'Пользователя {user_tag} не существует')
+            logger.info(f'Пользователя {self.user_tag} не существует')
             return {}
 
         prep_data = self.__preprocess_insta_info(data)
         return prep_data
 
 
-    def __get_profile_info(self, user_tag: str):
-        url = f'https://www.instagram.com/{user_tag}/channel/?__a=1'
+    def __get_profile_info(self):
+        url = f'https://www.instagram.com/{self.user_tag}/channel/?__a=1'
         headers = {'User-Agent': 'Mozilla'}
         req = requests.get(url, headers=headers)
         data = req.json()
@@ -122,7 +131,9 @@ class Instagram:
 
         return edges_media
 
-    def __save_in_file(self, data, path):
+    def __save_in_file(self, data):
+        pcl_file = self.user_tag + '.pcl'
+        path = self.path / pcl_file
         dir_path = path.parent
         if not dir_path.is_dir():
             dir_path.mkdir()
@@ -139,23 +150,22 @@ class Instagram:
 
 
     def save_data(self, data):
-        path = Path('..', 'data', data['insta_tag'], data['insta_tag'] + '.pcl')
-        self.__save_in_file(data, path)
+        self.__save_in_file(data)
 
-        path = Path('..', 'data', data['insta_tag'], 'profile_pic.jpg')
+        path = self.path / 'profile_pic.jpg'
         self.__save_image_in_file(data['profile_pic_url'], path)
 
         for media in data['edge_media']:
             if media['carusel']:
                 for carusel_media in media['carusel']:
-                    path = Path('..', 'data', data['insta_tag'], media["id"], f'{carusel_media["id"]}.jpg')
+                    path = self.path / media["id"] / f'{carusel_media["id"]}.jpg'
                     self.__save_image_in_file(carusel_media['display_url'], path)
             else:
-                path = Path('..', 'data', data['insta_tag'], f'{media["id"]}.jpg')
+                path = self.path / f'{media["id"]}.jpg'
                 self.__save_image_in_file(media['display_url'], path)
 
         for media in data['edge_video']:
-            path = Path('..', 'data', data['insta_tag'], f'{media["id"]}.jpg')
+            path = self.path / f'{media["id"]}.jpg'
             self.__save_image_in_file(media['display_url'], path)
 
 
@@ -163,9 +173,10 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(name)s %(levelname)s:%(message)s')
     logger = logging.getLogger(__name__)
+    path = Path.cwd() / '..' / 'data'
 
-    insta = Instagram()
-    data = insta.get_user_insta_info('falcon151')
+    insta = Instagram('falcon151',path)
+    data = insta.get_user_insta_info()
     insta.save_data(data)
 
 if __name__ == 'instagram_info':
