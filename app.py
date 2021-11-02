@@ -2,15 +2,8 @@ from scripts.instagram_info import Instagram
 from scripts.instagram_analyze import InstaAnalyze
 from pathlib import Path
 
-if __name__ == '__main__':
-    path = Path.cwd() / 'data'
-    insta = Instagram('krupskaya_', path)
-    data = insta.get_user_insta_info()
-    insta.save_data(data)
 
-    analyze = InstaAnalyze('krupskaya_')
-    metrics = analyze.get_metrics()
-    print(metrics)
+def inter_metrics(metrics):
     if metrics['colorfulness'] in (3, 4) and metrics['diversity'] in (3, 4) and metrics['harmony'] in (3, 4):
         print('У человека высокая доброжелательность (Agreeableness)')
     else:
@@ -41,3 +34,16 @@ if __name__ == '__main__':
         print('У человека есть признаки депрессии')
     else:
         print('Отсутствуют признаки депрессии')
+
+
+if __name__ == '__main__':
+    path = Path.cwd() / 'data'
+    insta = Instagram('krupskaya_', path)
+    data = insta.get_user_insta_info()
+    insta.save_data(data)
+
+    analyze = InstaAnalyze('krupskaya_')
+    metrics = analyze.get_metrics()
+    print(metrics)
+    inter_metrics(metrics)
+
